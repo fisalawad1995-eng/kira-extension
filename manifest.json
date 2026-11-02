@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Board Tab",
+  "version": "2.0.0",
+  "description": "Your new tab as a premium visual bookmark workspace — boards, pages, quick save, smart search, and more.",
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "unlimitedStorage",
+    "favicon",
+    "tabs",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "*://suggestqueries.google.com/*",
+    "*://*.open-meteo.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "commands": {
+    "quick-save": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Quick Save active tab to Board Tab"
+    }
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab/index.html"
+  },
+  "action": {
+    "default_popup": "popup/quick-save-picker.html",
+    "default_title": "Board Tab — Quick Save",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

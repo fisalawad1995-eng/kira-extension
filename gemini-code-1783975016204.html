@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board Tab</title>
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <!-- Top Action Bar -->
+  <header class="top-bar">
+    <div class="left-actions">
+      <button id="btn-home" class="btn" title="Scroll back to the start">Home</button>
+      <button id="btn-clear" class="btn" title="Remove all custom boards">Clear</button>
+      <button id="btn-add-board" class="btn plus-btn" title="Add a new board">+</button>
+    </div>
+  </header>
+
+  <!-- Drag/Scrollable Workspace Canvas -->
+  <main class="workspace" id="workspace-container">
+    <!-- Columns injected here dynamically by newtab.js -->
+  </main>
+
+  <!-- Floating Settings Button (Bottom Left) -->
+  <button id="btn-open-settings" class="floating-settings-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+  </button>
+
+  <!-- Custom Add Link Modal (Matches "WhatsApp Image ... 10.39.53 PM.jpeg") -->
+  <div id="add-link-modal" class="modal hidden">
+    <div class="custom-link-content">
+      <input type="text" id="new-link-url" placeholder="https://example.com" autocomplete="off">
+      <div class="modal-buttons">
+        <button id="btn-confirm-add" class="btn-purple">Add Link</button>
+        <button id="btn-cancel-add" class="btn-cancel-red">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Style & Wallpaper Settings Panel (Matches "WhatsApp Image ... 10.40.45 PM.jpeg") -->
+  <div id="settings-panel" class="settings-sidebar hidden">
+    <div class="settings-header">
+      <h2>Style</h2>
+    </div>
+    
+    <div class="style-toggle-group">
+      <button class="style-toggle active">Dark</button>
+      <button class="style-toggle">Light</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-header">
+        <span>DOWNLOADED WALLPAPERS</span>
+        <span class="badge">1</span>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+      <div class="section-content">
+        <div class="wallpaper-card">
+          <div class="wallpaper-img-preview" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400');"></div>
+          <div class="wallpaper-info">
+            <span>Final Stand</span>
+            <div class="wallpaper-actions">
+              <button title="Apply"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+              <button title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-header">
+        <span>STARTER WALLPAPERS</span>
+        <span class="badge">27</span>
+        <svg class="chevron flipped" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+    </div>
+
+    <div class="settings-footer-buttons">
+      <button class="btn-outline" id="btn-upload-bg">Upload Wallpaper</button>
+      <button class="btn-outline">More Wallpapers</button>
+    </div>
+  </div>
+
+  <!-- Hidden file input for uploading custom backgrounds -->
+  <input type="file" id="bg-file-input" accept="image/*" style="display: none;">
+
+  <script src="newtab.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Board Tab",
+  "version": "1.0.0",
+  "description": "Turns your new tab into a drag-and-drop bookmark board workspace, organized into glassmorphic columns.",
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "favicon",
+    "tabs"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}

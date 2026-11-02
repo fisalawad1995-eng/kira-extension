@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board Tab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════
+       TOP ACTION BAR
+  ══════════════════════════════ -->
+  <header class="top-bar">
+    <div class="left-actions">
+      <button id="btn-home" class="btn" title="Scroll back to start">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Home
+      </button>
+      <button id="btn-add-board" class="btn" title="Add a new board">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Board
+      </button>
+      <button id="btn-stash-tabs" class="btn btn-stash" title="Save all open tabs in this window into a board">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        Stash Tabs
+        <span id="stash-tab-count" class="top-btn-badge hidden">0</span>
+      </button>
+      <button id="btn-import" class="btn" title="Import bookmarks">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        Import
+      </button>
+      <button id="btn-trash" class="btn btn-icon" title="Trash">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Smart Search -->
+    <div class="search-container"
+      style="display: flex; flex: 1; max-width: 600px; gap: 10px; margin: 0 var(--space-md);">
+      <div class="search-wrapper" style="margin: 0; flex: 1; max-width: none;">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search bookmarks…" autocomplete="off"
+          spellcheck="false">
+      </div>
+
+      <div class="search-wrapper" style="margin: 0; flex: 1; max-width: none; position: relative;">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <input type="text" id="google-search-input" class="search-input" placeholder="Search Google…" autocomplete="off"
+          spellcheck="false">
+        <div id="google-search-suggestions" class="google-suggestions-panel hidden"></div>
+      </div>
+    </div>
+
+    <div class="right-actions">
+      <!-- Ambient Clock & Greeting -->
+      <div id="ambient-clock-widget" class="ambient-clock-pill">
+        <div class="ambient-clock-main">
+          <span id="ambient-time" class="ambient-time" title="Click to toggle 12h / 24h format">12:00</span>
+          <span id="ambient-date" class="ambient-date">Mon, Nov 2</span>
+        </div>
+        <div id="ambient-greeting" class="ambient-greeting" title="Click to set your name">Good afternoon</div>
+      </div>
+
+      <!-- Live Weather Badge -->
+      <button id="weather-badge" class="weather-badge-pill" title="Click to set city for live weather">
+        <span class="weather-icon">🌤️</span>
+        <span class="weather-temp">--°C</span>
+      </button>
+
+      <!-- Quick Scratchpad & Tasks Toggle -->
+      <button id="btn-notes-toggle" class="btn btn-icon" title="Quick Scratchpad & Daily Tasks">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+        <span id="scratchpad-todo-badge" class="top-btn-badge hidden">0</span>
+      </button>
+
+      <button id="btn-blur-toggle" class="btn btn-icon" title="Toggle blur mode">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+      <button id="btn-open-settings" class="floating-settings-btn" title="Style settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════
+       WORKSPACE
+  ══════════════════════════════ -->
+  <main class="workspace" id="workspace-container">
+    <!-- Columns injected by app.js -->
+  </main>
+
+  <!-- ══════════════════════════════
+       SEARCH RESULTS OVERLAY
+  ══════════════════════════════ -->
+  <div id="search-results-panel" class="search-results-panel hidden"></div>
+
+  <!-- ══════════════════════════════
+       ADD LINK MODAL
+  ══════════════════════════════ -->
+  <div id="add-link-modal" class="modal hidden">
+    <div class="custom-link-content">
+      <h3>Add Bookmark</h3>
+      <div>
+        <div class="modal-label">URL</div>
+        <input type="text" id="new-link-url" placeholder="https://example.com" autocomplete="off">
+      </div>
+      <div>
+        <div class="modal-label">Title (optional)</div>
+        <input type="text" id="new-link-title" placeholder="Leave blank to use page title">
+      </div>
+      <div id="add-link-page-row">
+        <div class="modal-label">Save to Page</div>
+        <select id="new-link-page-select"></select>
+      </div>
+      <div class="modal-buttons">
+        <button id="btn-confirm-add" class="btn-purple">Add Bookmark</button>
+        <button id="btn-cancel-add" class="btn-cancel-red">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       ADD BOARD MODAL
+  ══════════════════════════════ -->
+  <div id="add-board-modal" class="modal hidden">
+    <div class="custom-link-content">
+      <h3>Add New Board</h3>
+      <div>
+        <div class="modal-label">Board Name</div>
+        <input type="text" id="new-board-title" placeholder="e.g. Work, Personal, Design..." autocomplete="off">
+      </div>
+      <div class="modal-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+        <button id="btn-confirm-add-board" class="btn-purple" style="width:100%; justify-content:center;">Create
+          Board</button>
+        <button id="btn-cancel-add-board" class="btn-cancel-red"
+          style="width:100%; justify-content:center;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       ADD PAGE MODAL
+  ══════════════════════════════ -->
+  <div id="add-page-modal" class="modal hidden">
+    <div class="custom-link-content">
+      <h3>Add New Page</h3>
+      <div>
+        <div class="modal-label">Page Name</div>
+        <input type="text" id="new-page-title" placeholder="e.g. Main, Docs, Tools..." autocomplete="off">
+      </div>
+      <div class="modal-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+        <button id="btn-confirm-add-page" class="btn-purple" style="width:100%; justify-content:center;">Create
+          Page</button>
+        <button id="btn-cancel-add-page" class="btn-cancel-red"
+          style="width:100%; justify-content:center;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       RENAME MODAL
+  ══════════════════════════════ -->
+  <div id="rename-modal" class="modal hidden">
+    <div class="custom-link-content">
+      <h3 id="rename-modal-heading">Rename Item</h3>
+      <div>
+        <div class="modal-label">New Title</div>
+        <input type="text" id="rename-title-input" placeholder="Enter new title..." autocomplete="off">
+      </div>
+      <div class="modal-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+        <button id="btn-confirm-rename" class="btn-purple" style="width:100%; justify-content:center;">Save
+          Title</button>
+        <button id="btn-cancel-rename" class="btn-cancel-red"
+          style="width:100%; justify-content:center;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       IMPORT MODAL
+  ══════════════════════════════ -->
+  <div id="import-modal" class="modal hidden">
+    <div class="import-modal-content">
+      <h3>Import Bookmarks</h3>
+      <div class="modal-buttons" id="import-choice-buttons">
+        <button id="btn-import-chrome" class="btn-purple">From Chrome</button>
+        <button id="btn-import-html" class="btn-outline">From .html file</button>
+        <button id="btn-import-json-modal" class="btn-outline">From .json file</button>
+        <button id="btn-cancel-import" class="btn-cancel-red">Cancel</button>
+      </div>
+      <div id="import-progress-section" class="hidden">
+        <div class="import-progress-bar-bg">
+          <div class="import-progress-bar-fill" id="import-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="import-status" id="import-status-text">Starting…</div>
+      </div>
+      <div id="import-conflict-section" class="hidden">
+        <div class="modal-label">Skipped duplicates:</div>
+        <div class="import-conflict-list" id="import-conflict-list"></div>
+      </div>
+      <div id="import-done-row" class="hidden">
+        <button id="btn-import-done" class="btn-purple">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       TRASH PANEL
+  ══════════════════════════════ -->
+  <aside id="trash-panel" class="trash-panel hidden">
+    <div class="trash-panel-header">
+      <h2>🗑 Trash</h2>
+      <button id="btn-trash-close" class="trash-panel-close" title="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div id="trash-items-list"></div>
+  </aside>
+
+  <!-- ══════════════════════════════
+       SETTINGS SIDEBAR
+  ══════════════════════════════ -->
+  <aside id="settings-panel" class="settings-sidebar hidden">
+    <div class="settings-header">
+      <h2>Style</h2>
+    </div>
+
+    <!-- Light / Dark toggle -->
+    <div class="style-toggle-group">
+      <button class="style-toggle active" data-mode="dark">Dark</button>
+      <button class="style-toggle" data-mode="light">Light</button>
+    </div>
+
+    <!-- Accent colour -->
+    <div class="settings-section">
+      <div class="section-header">ACCENT COLOUR</div>
+      <div class="section-content">
+        <div class="accent-picker-row">
+          <div class="accent-swatches" id="accent-swatches">
+            <div class="accent-swatch active" data-hex="#8B5CF6" style="background:#8B5CF6" title="Violet"></div>
+            <div class="accent-swatch" data-hex="#3B82F6" style="background:#3B82F6" title="Blue"></div>
+            <div class="accent-swatch" data-hex="#10B981" style="background:#10B981" title="Emerald"></div>
+            <div class="accent-swatch" data-hex="#F59E0B" style="background:#F59E0B" title="Amber"></div>
+            <div class="accent-swatch" data-hex="#EF4444" style="background:#EF4444" title="Red"></div>
+            <div class="accent-swatch" data-hex="#EC4899" style="background:#EC4899" title="Pink"></div>
+            <input type="color" class="accent-custom-input" id="accent-custom-input" title="Custom colour"
+              value="#8B5CF6">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ambient Widgets -->
+    <div class="settings-section">
+      <div class="section-header">AMBIENT WIDGETS</div>
+      <div class="section-content" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="settings-toggle-row">
+          <div>
+            <div class="settings-toggle-label">Clock & Greeting</div>
+            <div class="settings-toggle-desc">Show time, date & greeting in top bar</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="show-clock-checkbox" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="settings-toggle-row">
+          <div>
+            <div class="settings-toggle-label">Live Weather Badge</div>
+            <div class="settings-toggle-desc">Show local temperature & sky conditions</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="show-weather-checkbox" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="settings-section">
+      <div class="section-header">PRIVACY</div>
+      <div class="section-content">
+        <div class="settings-toggle-row">
+          <div>
+            <div class="settings-toggle-label">Blur Boards</div>
+            <div class="settings-toggle-desc">Hide tiles during screen sharing</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="blur-toggle-checkbox">
+            <span class="toggle-track"></span>
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Folders & Columns -->
+    <div class="settings-section">
+      <div class="section-header">FOLDERS & COLUMNS</div>
+      <div class="section-content">
+        <div class="settings-toggle-row">
+          <div>
+            <div class="settings-toggle-label">Show Empty Chrome Folders</div>
+            <div class="settings-toggle-desc">Show folders with no bookmarks</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="show-empty-folders-checkbox">
+            <span class="toggle-track"></span>
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <button class="btn-outline" id="btn-reset-hidden-folders"
+          style="width:100%;font-size:12px;margin-top:8px;padding:6px 12px;">Restore Hidden Folders</button>
+      </div>
+    </div>
+
+    <!-- Wallpapers -->
+    <div class="settings-section">
+      <div class="section-header" id="wallpapers-accordion-header">
+        <span>DOWNLOADED WALLPAPERS</span>
+        <span class="badge" id="wallpaper-count-badge">0</span>
+        <svg class="chevron" id="wallpapers-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
+      </div>
+      <div class="section-content" id="wallpaper-list"></div>
+    </div>
+
+    <div class="settings-footer-buttons">
+      <button class="btn-outline" id="btn-upload-bg">Upload Wallpaper</button>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════
+       FLOATING QUICK SCRATCHPAD & TASKS WIDGET
+  ══════════════════════════════ -->
+  <section id="scratchpad-widget" class="scratchpad-widget hidden">
+    <div id="scratchpad-header" class="scratchpad-header" title="Drag to move widget">
+      <div class="scratchpad-tabs">
+        <button class="scratchpad-tab-btn active" data-tab="notes">📝 Scratchpad</button>
+        <button class="scratchpad-tab-btn" data-tab="todos">✅ Daily Tasks</button>
+      </div>
+      <button id="btn-scratchpad-close" class="scratchpad-close-btn" title="Close">✖</button>
+    </div>
+
+    <!-- Notes Pane -->
+    <div id="scratchpad-notes-pane" class="scratchpad-pane">
+      <textarea id="scratchpad-textarea" class="scratchpad-textarea"
+        placeholder="Jot down quick notes, links, code snippets, or ideas… (Auto-saved)"></textarea>
+      <div class="scratchpad-footer">
+        <span id="scratchpad-char-count" class="scratchpad-stats">0 words · 0 chars</span>
+        <div class="scratchpad-footer-actions">
+          <button id="btn-scratchpad-copy" class="scratchpad-mini-btn">Copy</button>
+          <button id="btn-scratchpad-clear" class="scratchpad-mini-btn danger">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Pane -->
+    <div id="scratchpad-todos-pane" class="scratchpad-pane hidden">
+      <div class="scratchpad-todo-input-row">
+        <input type="text" id="scratchpad-todo-input" class="scratchpad-todo-input"
+          placeholder="Add a quick task and press Enter…" autocomplete="off">
+        <button id="btn-scratchpad-add-todo" class="scratchpad-todo-add-btn">+</button>
+      </div>
+      <div id="scratchpad-todo-list" class="scratchpad-todo-list"></div>
+      <div class="scratchpad-footer">
+        <span class="scratchpad-stats">Check off tasks as you go</span>
+        <button id="btn-scratchpad-clear-done" class="scratchpad-mini-btn">Clear Completed</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════
+       STASH ALL OPEN TABS MODAL
+  ══════════════════════════════ -->
+  <div id="stash-tabs-modal" class="modal hidden">
+    <div class="custom-link-content stash-modal-content">
+      <div class="stash-modal-header">
+        <h3>⚡ Stash Open Tabs</h3>
+        <button id="btn-stash-select-all" class="scratchpad-mini-btn">Deselect All</button>
+      </div>
+      <div class="stash-target-selector">
+        <label class="stash-radio-label">
+          <input type="radio" name="stash-target-type" value="new" checked>
+          Create New Board
+        </label>
+        <label class="stash-radio-label">
+          <input type="radio" name="stash-target-type" value="existing">
+          Add to Existing Board
+        </label>
+      </div>
+
+      <div id="stash-new-board-group">
+        <div class="modal-label">New Board Name</div>
+        <input type="text" id="stash-board-title" placeholder="Session — Nov 2" autocomplete="off">
+      </div>
+
+        <div id="stash-existing-board-group" class="hidden">
+          <div>
+            <div class="modal-label">Select Board</div>
+            <select id="stash-board-select"></select>
+          </div>
+          <div>
+            <div class="modal-label">New Page Name</div>
+            <input type="text" id="stash-page-title" placeholder="Stashed Tabs" autocomplete="off">
+          </div>
+        </div>
+
+        <div>
+          <div class="modal-label">Select Tabs to Save</div>
+          <div id="stash-tabs-list" class="stash-tabs-list"></div>
+        </div>
+
+        <label class="stash-close-option">
+          <input type="checkbox" id="stash-close-tabs-checkbox">
+          <span>Close stashed tabs after saving (declutter window)</span>
+        </label>
+
+        <div class="modal-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+          <button id="btn-confirm-stash" class="btn-purple" style="width:100%; justify-content:center;">Stash Selected
+            Tabs</button>
+          <button id="btn-cancel-stash" class="btn-cancel-red"
+            style="width:100%; justify-content:center;">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+       ONBOARDING MODAL
+  ══════════════════════════════ -->
+    <div id="onboarding-modal" class="modal hidden">
+      <div class="custom-link-content" style="text-align: center; gap: 20px;">
+        <h2 style="font-size: 24px; margin-bottom: 8px;">Welcome to Board Tab</h2>
+        <div
+          style="text-align: left; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <h3 style="margin-bottom: 12px; color: var(--color-accent); font-size: 18px;">Organize Bookmarks</h3>
+          <ul
+            style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; color: var(--text-secondary);">
+            <li style="display: flex; align-items: center; gap: 10px;"><svg width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-accent);">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Create Pages</li>
+            <li style="display: flex; align-items: center; gap: 10px;"><svg width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-accent);">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Group links into Boards</li>
+            <li style="display: flex; align-items: center; gap: 10px;"><svg width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-accent);">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Drag & Drop to rearrange</li>
+          </ul>
+        </div>
+        <button id="btn-close-onboarding" class="btn-purple"
+          style="width: 100%; justify-content: center; padding: 12px; font-size: 16px;">Get Started</button>
+      </div>
+    </div>
+
+    <!-- Hidden inputs -->
+    <input type="file" id="bg-file-input" accept="image/*" style="display:none">
+    <input type="file" id="import-html-input" accept=".html,.htm" style="display:none">
+    <input type="file" id="import-json-input" accept=".json" style="display:none">
+
+    <!-- ══════════════════════════════
+       LAYOUT SETTINGS
+  ══════════════════════════════ -->
+    <button id="btn-layout-settings" class="floating-settings-btn" title="Layout settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+    </button>
+
+    <div id="layout-settings-menu" class="layout-settings-menu hidden">
+      <div class="menu-title">Workspace Layout</div>
+      <div class="menu-options">
+        <label>
+          <input type="radio" name="layout-mode" value="canvas" checked> Free Canvas
+        </label>
+        <label>
+          <input type="radio" name="layout-mode" value="grid"> Smooth Grid
+        </label>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

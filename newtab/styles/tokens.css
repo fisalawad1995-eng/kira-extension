@@ -1,0 +1,63 @@
+/* Board Tab — Design Tokens
+   All theme values are declared here as CSS custom properties.
+   Light/dark mode is applied by theme.js overriding these on :root. */
+
+:root {
+  /* Colour — dark mode defaults */
+  --bg-body:            #110e14;
+  --bg-column:          rgba(28, 18, 14, 0.45);
+  --bg-column-hover:    rgba(40, 25, 18, 0.6);
+  --text-primary:       #ffffff;
+  --text-secondary:     rgba(255, 255, 255, 0.65);
+  --border-subtle:      rgba(255, 255, 255, 0.07);
+  --color-accent:       #8B5CF6;
+  --color-accent-glow:  rgba(139, 92, 246, 0.2);
+  --color-danger:       #ff6b6b;
+  --color-danger-bg:    rgba(255, 107, 107, 0.12);
+  --context-menu-bg:    #231b2b;
+  --modal-bg:           #1b1423;
+  --settings-bg:        #1c1524;
+  --input-bg:           #110c16;
+  --input-border:       #48345c;
+  --btn-bg:             rgba(45, 32, 25, 0.75);
+  --overlay-gradient:   radial-gradient(circle at 80% 50%, rgba(243, 114, 44, 0.15) 0%, rgba(0, 0, 0, 0.55) 80%);
+
+  /* Spacing */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+
+  /* Radii */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-pill: 999px;
+
+  /* Column */
+  --column-width:       320px;
+  --column-backdrop:    blur(10px) saturate(120%);
+  --column-shadow:      0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* Animation */
+  --transition-fast:    0.15s ease;
+  --transition-medium:  0.25s ease;
+  --transition-slow:    0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-md:   14px;
+  --font-size-lg:   16px;
+  --font-size-xl:   18px;
+
+  /* Z-index layers */
+  --z-workspace:      2;
+  --z-topbar:         3;
+  --z-context-menu:   5000;
+  --z-modal:          4000;
+  --z-settings:       4500;
+  --z-floating-btn:   1000;
+}
