@@ -26,6 +26,47 @@ export function getFaviconUrl(url) {
   } catch { return ''; }
 }
 
+const MONOGRAM_PALETTES = [
+  ['#8B5CF6', '#5B21B6'],
+  ['#3B82F6', '#1D4ED8'],
+  ['#10B981', '#047857'],
+  ['#F59E0B', '#B45309'],
+  ['#EC4899', '#BE185D'],
+  ['#06B6D4', '#0E7490'],
+  ['#F43F5E', '#BE123C'],
+  ['#6366F1', '#4338CA']
+];
+
+function _buildMonogramSvgDataUrl(url) {
+  let clean = 'BT';
+  try {
+    const host = new URL(url).hostname.replace(/^www\./i, '');
+    const parts = host.split('.');
+    const main = parts[0] || host;
+    clean = main.slice(0, 2).toUpperCase();
+  } catch {
+    clean = (url || 'LK').replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'LK';
+  }
+
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const [c1, c2] = MONOGRAM_PALETTES[Math.abs(hash) % MONOGRAM_PALETTES.length];
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${c1}"/>
+        <stop offset="100%" stop-color="${c2}"/>
+      </linearGradient>
+    </defs>
+    <rect width="32" height="32" rx="7" fill="url(#g)"/>
+    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-weight="700" font-size="13" letter-spacing="0.5">${clean}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export function createFaviconImg(url, className = 'favicon-img') {
   const img = document.createElement('img');
   img.className = className;
@@ -34,19 +75,32 @@ export function createFaviconImg(url, className = 'favicon-img') {
   let hostname = '';
   try { hostname = new URL(url).hostname; } catch { }
   const fallbackSrc = hostname ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32` : '';
+  const monogramSrc = _buildMonogramSvgDataUrl(url);
 
-  img.src = getFaviconUrl(url);
+  const primarySrc = getFaviconUrl(url);
+  img.src = primarySrc || fallbackSrc || monogramSrc;
 
   img.addEventListener('error', function errorHandler() {
     if (!img.dataset.tried && fallbackSrc) {
       img.dataset.tried = '1';
       img.src = fallbackSrc;
-    } else {
-      img.style.opacity = '0';
+    } else if (!img.dataset.monogram) {
+      img.dataset.monogram = '1';
+      img.src = monogramSrc;
     }
   });
 
   return img;
+}
+
+export function applyColumnAccent(column, hex) {
+  if (hex) {
+    column.style.setProperty('--board-accent', hex);
+    column.classList.add('has-board-accent');
+  } else {
+    column.style.removeProperty('--board-accent');
+    column.classList.remove('has-board-accent');
+  }
 }
 
 export async function loadBoardPositions() {
@@ -57,7 +111,7 @@ export async function loadBoardPositions() {
 export async function saveBoardPosition(id, pos) {
   const key = layoutMode === 'grid' ? 'board_positions_grid' : 'board_positions';
   const positions = await loadBoardPositions();
-  positions[id] = pos;
+  positions[id] = { ...(positions[id] || {}), ...pos };
   await DB.settings.set(key, positions);
 }
 
@@ -90,6 +144,10 @@ export function buildFolderColumn(title, folderId, items, handlers) {
   _attachCanvasDrag(column, folderId);
   attachBlurReveal(column);
 
+  if (handlers.accentColor) {
+    applyColumnAccent(column, handlers.accentColor);
+  }
+
   const header = _buildHeader(title, {
     onAdd: handlers.onAdd,
     onOpenAll: (e) => handlers.onOpenAll(e?.shiftKey),
@@ -98,7 +156,13 @@ export function buildFolderColumn(title, folderId, items, handlers) {
       onRename: handlers.onRename,
       onDelete: handlers.onDelete,
       deleteLabel: 'Delete Folder',
-      onExportBoard: null // folders don't support JSON export
+      onExportBoard: null, // folders don't support JSON export
+      currentAccent: handlers.accentColor || null,
+      onSelectAccent: async (hex) => {
+        applyColumnAccent(column, hex);
+        handlers.accentColor = hex;
+        if (handlers.onSelectAccent) await handlers.onSelectAccent(hex);
+      }
     })
   });
   column.appendChild(header);
@@ -131,12 +195,9 @@ export function buildBoardColumn(board, pages, bookmarksByPage, handlers) {
   _attachCanvasDrag(column, board.id);
   attachBlurReveal(column);
 
-  // Apply per-board wallpaper if set
-  if (board.wallpaper_ref) {
-    column.style.backgroundImage = `url('${board.wallpaper_ref}')`;
-    column.style.backgroundSize = 'cover';
-    column.style.backgroundPosition = 'center';
-    column.classList.add('has-board-wallpaper');
+  // Apply per-board color accent if set
+  if (board.accent_color) {
+    applyColumnAccent(column, board.accent_color);
   }
 
   const header = _buildHeader(board.title, {
@@ -154,8 +215,13 @@ export function buildBoardColumn(board, pages, bookmarksByPage, handlers) {
       onDelete: () => handlers.onDeleteBoard(board.id),
       onExportBoard: () => exportBoard(board.id),
       onAddPage: () => handlers.onAddPage(board.id),
-      onUploadWallpaper: () => handlers.onUploadBoardWallpaper(board.id),
-      onImportJson: () => handlers.onImportJson()
+      onImportJson: () => handlers.onImportJson(),
+      currentAccent: board.accent_color || null,
+      onSelectAccent: async (hex) => {
+        board.accent_color = hex;
+        await DB.boards.save(board);
+        applyColumnAccent(column, hex);
+      }
     })
   });
   column.appendChild(header);
@@ -692,7 +758,6 @@ function _showColumnMenu(e, anchorBtn, handlers) {
     { icon: _iconOpenAll, label: 'Open All Links', fn: handlers.onOpenAll },
     { icon: _iconEdit, label: 'Rename Board', fn: handlers.onRename },
     { icon: _iconPage, label: 'Add Page', fn: handlers.onAddPage },
-    { icon: _iconWallpaper, label: 'Board Wallpaper', fn: handlers.onUploadWallpaper },
     { icon: _iconExport, label: 'Export as JSON', fn: handlers.onExportBoard },
     { icon: _iconImport, label: 'Import JSON', fn: handlers.onImportJson },
   ];
@@ -704,6 +769,39 @@ function _showColumnMenu(e, anchorBtn, handlers) {
     btn.addEventListener('click', () => { _closeAnyOpenMenu(); fn(); });
     menu.appendChild(btn);
   });
+
+  if (handlers.onSelectAccent) {
+    menu.appendChild(document.createElement('hr'));
+    const colorWrap = document.createElement('div');
+    colorWrap.className = 'context-menu-color-row';
+    const colors = [
+      { hex: null, label: 'Default' },
+      { hex: '#8B5CF6', label: 'Violet' },
+      { hex: '#3B82F6', label: 'Blue' },
+      { hex: '#10B981', label: 'Emerald' },
+      { hex: '#F59E0B', label: 'Amber' },
+      { hex: '#EC4899', label: 'Pink' },
+      { hex: '#06B6D4', label: 'Cyan' }
+    ];
+    colors.forEach(({ hex, label }) => {
+      const dot = document.createElement('button');
+      dot.className = 'context-color-dot' + (handlers.currentAccent === hex ? ' active' : '');
+      dot.title = `Card Accent: ${label}`;
+      if (hex) {
+        dot.style.background = hex;
+      } else {
+        dot.innerHTML = '✕';
+        dot.classList.add('reset-dot');
+      }
+      dot.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        _closeAnyOpenMenu();
+        handlers.onSelectAccent(hex);
+      });
+      colorWrap.appendChild(dot);
+    });
+    menu.appendChild(colorWrap);
+  }
 
   if (handlers.onDelete) {
     menu.appendChild(document.createElement('hr'));
@@ -909,4 +1007,75 @@ function _attachResize(column, identifier) {
   createResizer('board-resize-right', 'width');
   createResizer('board-resize-bottom', 'height');
   createResizer('board-resize-corner', 'both');
+}
+
+// ─────────────────────────────────────────────
+// Tidy Up / Auto-Align Free Canvas
+// ─────────────────────────────────────────────
+export async function tidyUpCanvas(workspace) {
+  if (!workspace || layoutMode !== 'canvas') return;
+  const cols = [...workspace.querySelectorAll('.board-column')];
+  if (!cols.length) return;
+
+  // Sort columns roughly by current top-to-bottom, left-to-right visual order
+  cols.sort((a, b) => {
+    const ay = parseInt(a.style.top || '0', 10);
+    const by = parseInt(b.style.top || '0', 10);
+    if (Math.abs(ay - by) > 80) return ay - by;
+    return parseInt(a.style.left || '0', 10) - parseInt(b.style.left || '0', 10);
+  });
+
+  const positions = await loadBoardPositions();
+  const PAD_X = 40;
+  const PAD_Y = 24;
+  const GAP_X = 24;
+  const GAP_Y = 24;
+  const maxViewportWidth = Math.max(workspace.clientWidth - PAD_X, 960);
+
+  let curX = PAD_X;
+  let curY = PAD_Y;
+  let rowMaxHeight = 0;
+  let zCounter = 101;
+
+  cols.forEach(col => {
+    const id = col.dataset.boardId || col.dataset.folderId;
+    const rect = col.getBoundingClientRect();
+    const w = rect.width || 300;
+    const h = rect.height || 260;
+
+    if (curX > PAD_X && curX + w > maxViewportWidth) {
+      curX = PAD_X;
+      curY += rowMaxHeight + GAP_Y;
+      rowMaxHeight = 0;
+    }
+
+    const snapX = Math.round(curX / 20) * 20;
+    const snapY = Math.round(curY / 20) * 20;
+
+    col.style.transition = 'left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    col.style.left = `${snapX}px`;
+    col.style.top = `${snapY}px`;
+    col.style.zIndex = zCounter;
+
+    setTimeout(() => {
+      col.style.transition = '';
+    }, 380);
+
+    if (id) {
+      positions[id] = {
+        ...(positions[id] || {}),
+        x: snapX,
+        y: snapY,
+        zIndex: zCounter
+      };
+    }
+
+    curX += w + GAP_X;
+    if (h > rowMaxHeight) rowMaxHeight = h;
+    zCounter++;
+  });
+
+  setMaxZIndex(zCounter);
+  await DB.settings.set('board_positions', positions);
+  workspace.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 }

@@ -5,7 +5,8 @@ import { init as initDB, DB } from '../db/indexeddb.js';
 import { buildSearchIndex, search } from '../modules/search.js';
 import {
   buildBoardColumn, buildFolderColumn,
-  loadBoardPositions, setMaxZIndex, layoutMode, setLayoutMode, loadColumnOrder, getFaviconUrl, createFaviconImg
+  loadBoardPositions, setMaxZIndex, layoutMode, setLayoutMode, loadColumnOrder, getFaviconUrl, createFaviconImg,
+  tidyUpCanvas, closeAnyOpenMenu
 }
   from '../modules/boards.js';
 import {
@@ -25,7 +26,8 @@ import { initQuickSaveListener } from '../modules/quick-save.js';
 import { importFromChromeBookmarks, importFromHtmlFile } from '../modules/import.js';
 import { importFromJson } from '../modules/export.js';
 import {
-  initAmbientClock, initWeatherWidget, initScratchpadWidget, initSessionStash
+  initAmbientClock, initWeatherWidget, initScratchpadWidget, initSessionStash,
+  initSpotlightAndShortcuts, initCanvasPan
 } from '../modules/widgets.js';
 
 // ─────────────────────────────────────────────
@@ -131,11 +133,25 @@ let activeBoardId = null;   // tracks the board column last interacted with
       layoutSettingsMenu.classList.add('hidden');
     }
   });
+  const btnTidyCanvas = document.getElementById('btn-tidy-canvas');
+  const updateTidyBtnVisibility = () => {
+    if (btnTidyCanvas) btnTidyCanvas.classList.toggle('hidden', layoutMode !== 'canvas');
+  };
+  updateTidyBtnVisibility();
+
+  if (btnTidyCanvas) {
+    btnTidyCanvas.addEventListener('click', async () => {
+      layoutSettingsMenu.classList.add('hidden');
+      await tidyUpCanvas(workspace);
+    });
+  }
+
   layoutModeRadios.forEach(r => {
     r.addEventListener('change', async (e) => {
       setLayoutMode(e.target.value);
       workspace.classList.remove('layout-canvas', 'layout-grid');
       workspace.classList.add(`layout-${layoutMode}`);
+      updateTidyBtnVisibility();
       await DB.settings.set('layout_mode', layoutMode);
       renderAll();
     });
@@ -145,11 +161,54 @@ let activeBoardId = null;   // tracks the board column last interacted with
   await renderWallpaperGallery();
   _refreshSearchIndex();
 
-  // Initialize Productivity & Ambient Widgets + Session Stash
+  // Initialize Productivity & Ambient Widgets + Session Stash + Spotlight + Canvas Pan
   initAmbientClock();
   initWeatherWidget();
   initScratchpadWidget();
   initSessionStash(renderAll);
+  initCanvasPan(workspace);
+  initSpotlightAndShortcuts({
+    onTidyUp: async () => {
+      if (layoutMode !== 'canvas') {
+        setLayoutMode('canvas');
+        workspace.classList.remove('layout-canvas', 'layout-grid');
+        workspace.classList.add('layout-canvas');
+        layoutModeRadios.forEach(r => { r.checked = (r.value === 'canvas'); });
+        updateTidyBtnVisibility();
+        await DB.settings.set('layout_mode', 'canvas');
+        await renderAll();
+      }
+      await tidyUpCanvas(workspace);
+    },
+    onNewBoard: () => btnAddBoard.click(),
+    onStashTabs: () => document.getElementById('btn-stash-tabs')?.click(),
+    onToggleNotes: () => document.getElementById('btn-notes-toggle')?.click(),
+    onToggleBlur: () => btnBlurToggle.click(),
+    onToggleLayout: async () => {
+      const next = layoutMode === 'canvas' ? 'grid' : 'canvas';
+      setLayoutMode(next);
+      workspace.classList.remove('layout-canvas', 'layout-grid');
+      workspace.classList.add(`layout-${next}`);
+      layoutModeRadios.forEach(r => { r.checked = (r.value === next); });
+      updateTidyBtnVisibility();
+      await DB.settings.set('layout_mode', next);
+      await renderAll();
+    },
+    onToggleTheme: () => {
+      const curMode = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+      styleToggles.forEach(b => b.classList.toggle('active', b.dataset.mode === curMode));
+      applyMode(curMode);
+    },
+    onOpenImport: () => btnImport.click(),
+    onOpenTrash: () => btnTrash.click(),
+    onEscapeAll: () => {
+      document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+      settingsPanel.classList.add('hidden');
+      trashPanel.classList.add('hidden');
+      layoutSettingsMenu.classList.add('hidden');
+      closeAnyOpenMenu();
+    }
+  });
 
   // Listen for quick-save refresh
   window.addEventListener('boardtab:refresh', renderAll);
@@ -174,10 +233,11 @@ async function renderAll() {
   const scrollLeft = workspace.scrollLeft;
   workspace.innerHTML = '';
 
-  const [boards, boardPositions, columnOrder] = await Promise.all([
+  const [boards, boardPositions, columnOrder, folderAccents] = await Promise.all([
     DB.boards.getAll(),
     loadBoardPositions(),
-    loadColumnOrder()
+    loadColumnOrder(),
+    DB.settings.get('folder_accents').then(res => res || {})
   ]);
 
   // Native bookmark folders
@@ -205,7 +265,14 @@ async function renderAll() {
       onRename: () => _renameFolder(folder.id, folder.title),
       onDelete: () => _deleteFolder(folder.id, folder.title),
       onRefresh: renderAll,
-      onReorder: renderAll
+      onReorder: renderAll,
+      accentColor: folderAccents[folder.id] || null,
+      onSelectAccent: async (hex) => {
+        const current = (await DB.settings.get('folder_accents')) || {};
+        if (hex) current[folder.id] = hex;
+        else delete current[folder.id];
+        await DB.settings.set('folder_accents', current);
+      }
     });
     allColumns.push({ id: folder.id, el });
   }
@@ -221,7 +288,6 @@ async function renderAll() {
       onRenameBoard: _renameBoard,
       onDeleteBoard: _deleteBoard,
       onAddPage: _addPage,
-      onUploadBoardWallpaper: (bId) => _triggerBoardWallpaperUpload(bId),
       onImportJson: () => importJsonInput.click(),
       onRefresh: renderAll,
       onReorder: renderAll
@@ -277,7 +343,6 @@ async function renderAll() {
   }
 
   workspace.scrollLeft = scrollLeft;
-  await applyAllBoardWallpapers();
   _refreshSearchIndex();
 }
 

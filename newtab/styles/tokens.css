@@ -20,6 +20,10 @@
   --input-bg:           #110c16;
   --input-border:       #48345c;
   --btn-bg:             rgba(45, 32, 25, 0.75);
+  --btn-hover-bg:       rgba(90, 65, 50, 0.9);
+  --bg-panel:           rgba(28, 21, 36, 0.92);
+  --surface-hover:      rgba(255, 255, 255, 0.08);
+  --surface-subtle:     rgba(255, 255, 255, 0.04);
   --overlay-gradient:   radial-gradient(circle at 80% 50%, rgba(243, 114, 44, 0.15) 0%, rgba(0, 0, 0, 0.55) 80%);
 
   /* Spacing */

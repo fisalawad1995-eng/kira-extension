@@ -6,7 +6,8 @@
 // 4. "Save All Open Tabs" Session Stash Modal & Quick Stash
 
 import { DB } from '../db/indexeddb.js';
-import { createFaviconImg, getFaviconUrl } from './boards.js';
+import { createFaviconImg, getFaviconUrl, maxZIndex, setMaxZIndex } from './boards.js';
+import { search } from './search.js';
 
 // ─────────────────────────────────────────────
 // 1. AMBIENT CLOCK & GREETING
@@ -19,19 +20,16 @@ export async function initAmbientClock() {
   const clockContainer = document.getElementById('ambient-clock-widget');
   const timeEl = document.getElementById('ambient-time');
   const dateEl = document.getElementById('ambient-date');
-  const greetingEl = document.getElementById('ambient-greeting');
   const showClockCheckbox = document.getElementById('show-clock-checkbox');
 
-  if (!clockContainer || !timeEl || ! greetingEl) return;
+  if (!clockContainer || !timeEl) return;
 
-  const [saved24h, savedName, showClock] = await Promise.all([
+  const [saved24h, showClock] = await Promise.all([
     DB.settings.get('clock_24h'),
-    DB.settings.get('user_name'),
     DB.settings.get('show_ambient_clock')
   ]);
 
   _is24Hour = saved24h !== null ? !!saved24h : false;
-  _userName = savedName || '';
   const isVisible = showClock !== null ? !!showClock : true;
 
   clockContainer.classList.toggle('hidden', !isVisible);
@@ -64,31 +62,13 @@ export async function initAmbientClock() {
         day: 'numeric'
       });
     }
-
-    let greet = 'Good evening';
-    if (hours24 >= 5 && hours24 < 12) greet = 'Good morning';
-    else if (hours24 >= 12 && hours24 < 17) greet = 'Good afternoon';
-    else if (hours24 >= 17 && hours24 < 22) greet = 'Good evening';
-    else greet = 'Working late';
-
-    greetingEl.textContent = _userName ? `${greet}, ${_userName}` : greet;
   };
 
-  // Toggle 12h / 24h on clicking the time
-  timeEl.addEventListener('click', async () => {
+  // Toggle 12h / 24h on clicking the clock pill
+  clockContainer.addEventListener('click', async () => {
     _is24Hour = !_is24Hour;
     await DB.settings.set('clock_24h', _is24Hour);
     updateClock();
-  });
-
-  // Edit user name on clicking greeting
-  greetingEl.addEventListener('click', async () => {
-    const name = prompt('Enter your name for the greeting (leave blank to hide):', _userName);
-    if (name !== null) {
-      _userName = name.trim();
-      await DB.settings.set('user_name', _userName);
-      updateClock();
-    }
   });
 
   updateClock();
@@ -650,7 +630,403 @@ export function initSessionStash(onRefreshWorkspace) {
   }
 }
 
+// ─────────────────────────────────────────────
+// 5. POWER-USER SPOTLIGHT COMMAND PALETTE & GLOBAL HOTKEYS
+// ─────────────────────────────────────────────
+export function initSpotlightAndShortcuts(actions) {
+  const spotlightModal = document.getElementById('spotlight-modal');
+  const spotlightInput = document.getElementById('spotlight-input');
+  const spotlightList = document.getElementById('spotlight-results-list');
+  const btnOpenSpotlight = document.getElementById('btn-spotlight-open');
+
+  if (!spotlightModal || !spotlightInput || !spotlightList) return;
+
+  let activeIndex = 0;
+  let currentItems = [];
+
+  const getCommands = () => [
+    {
+      type: 'command',
+      icon: '✨',
+      title: 'Tidy Up / Auto-Align Canvas',
+      subtitle: 'Neatly pack and align all free-canvas cards',
+      shortcut: 'T',
+      run: () => actions.onTidyUp && actions.onTidyUp()
+    },
+    {
+      type: 'command',
+      icon: '➕',
+      title: 'Create New Board',
+      subtitle: 'Add a custom board column to your workspace',
+      shortcut: 'B',
+      run: () => actions.onNewBoard && actions.onNewBoard()
+    },
+    {
+      type: 'command',
+      icon: '⚡',
+      title: 'Stash All Open Tabs',
+      subtitle: 'Save open tabs in this window into a board',
+      shortcut: 'S',
+      run: () => actions.onStashTabs && actions.onStashTabs()
+    },
+    {
+      type: 'command',
+      icon: '📝',
+      title: 'Toggle Quick Scratchpad & Tasks',
+      subtitle: 'Open or close the floating notes & checklist widget',
+      shortcut: 'N',
+      run: () => actions.onToggleNotes && actions.onToggleNotes()
+    },
+    {
+      type: 'command',
+      icon: '👁️',
+      title: 'Toggle Privacy Blur Mode',
+      subtitle: 'Blur or unblur bookmark titles for screen sharing',
+      shortcut: 'P',
+      run: () => actions.onToggleBlur && actions.onToggleBlur()
+    },
+    {
+      type: 'command',
+      icon: '🔀',
+      title: 'Switch Layout Mode (Free Canvas / Smooth Grid)',
+      subtitle: 'Toggle between freeform canvas and magnetic grid',
+      shortcut: '',
+      run: () => actions.onToggleLayout && actions.onToggleLayout()
+    },
+    {
+      type: 'command',
+      icon: '🌓',
+      title: 'Toggle Dark / Light Theme',
+      subtitle: 'Switch workspace appearance mode',
+      shortcut: '',
+      run: () => actions.onToggleTheme && actions.onToggleTheme()
+    },
+    {
+      type: 'command',
+      icon: '📥',
+      title: 'Import Bookmarks',
+      subtitle: 'Import from Chrome, HTML file, or JSON backup',
+      shortcut: '',
+      run: () => actions.onOpenImport && actions.onOpenImport()
+    },
+    {
+      type: 'command',
+      icon: '🗑️',
+      title: 'Open Trash',
+      subtitle: 'Restore or permanently delete trashed items',
+      shortcut: '',
+      run: () => actions.onOpenTrash && actions.onOpenTrash()
+    }
+  ];
+
+  const getBoardEntries = () => {
+    const cols = [...document.querySelectorAll('.board-column')];
+    return cols.map(col => {
+      const titleEl = col.querySelector('.board-header-title');
+      const title = titleEl ? titleEl.textContent.trim() : 'Board';
+      const isFolder = col.dataset.columnType === 'folder';
+      const linkCount = col.querySelectorAll('.bookmark-link-content').length;
+      return {
+        type: 'board',
+        icon: isFolder ? '📁' : '📋',
+        title,
+        subtitle: `${isFolder ? 'Chrome Folder' : 'Custom Board'} · ${linkCount} links`,
+        shortcut: 'Jump / Shift+↵ Open All',
+        colEl: col
+      };
+    });
+  };
+
+  const openSpotlight = (initialValue = '') => {
+    spotlightModal.classList.remove('hidden');
+    spotlightInput.value = initialValue;
+    renderSpotlightResults();
+    setTimeout(() => spotlightInput.focus(), 20);
+  };
+
+  const closeSpotlight = () => {
+    spotlightModal.classList.add('hidden');
+    spotlightInput.value = '';
+  };
+
+  if (btnOpenSpotlight) {
+    btnOpenSpotlight.addEventListener('click', () => openSpotlight(''));
+  }
+
+  spotlightModal.addEventListener('click', (e) => {
+    if (e.target === spotlightModal) closeSpotlight();
+  });
+
+  const renderSpotlightResults = () => {
+    const raw = spotlightInput.value;
+    const q = raw.trim();
+    spotlightList.innerHTML = '';
+    currentItems = [];
+    activeIndex = 0;
+
+    if (!q) {
+      // Show Quick Commands + top Boards when empty
+      currentItems = [
+        ...getCommands().slice(0, 6),
+        ...getBoardEntries().slice(0, 4)
+      ];
+    } else if (q.startsWith('>')) {
+      const cmdQuery = q.slice(1).trim().toLowerCase();
+      currentItems = getCommands().filter(c =>
+        c.title.toLowerCase().includes(cmdQuery) || c.subtitle.toLowerCase().includes(cmdQuery)
+      );
+    } else if (q.startsWith('#')) {
+      const boardQuery = q.slice(1).trim().toLowerCase();
+      currentItems = getBoardEntries().filter(b =>
+        b.title.toLowerCase().includes(boardQuery)
+      );
+    } else {
+      const bkResults = search(q).slice(0, 15).map(r => ({
+        type: 'bookmark',
+        title: r.title || r.url,
+        subtitle: `${r.board_title} › ${r.page_title}`,
+        url: r.url,
+        shortcut: '↵ Open'
+      }));
+      const qLower = q.toLowerCase();
+      const matchingBoards = getBoardEntries().filter(b => b.title.toLowerCase().includes(qLower)).slice(0, 3);
+      const matchingCmds = getCommands().filter(c => c.title.toLowerCase().includes(qLower)).slice(0, 3);
+      currentItems = [...bkResults, ...matchingBoards, ...matchingCmds];
+    }
+
+    if (currentItems.length === 0) {
+      spotlightList.innerHTML = `<div class="spotlight-empty">No matching bookmarks, boards (#), or commands (>) found</div>`;
+      return;
+    }
+
+    currentItems.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'spotlight-item' + (idx === activeIndex ? ' active' : '');
+
+      let leadingEl;
+      if (item.type === 'bookmark') {
+        leadingEl = createFaviconImg(item.url, 'spotlight-favicon');
+      } else {
+        leadingEl = document.createElement('span');
+        leadingEl.className = 'spotlight-emoji-icon';
+        leadingEl.textContent = item.icon || '⚡';
+      }
+
+      const info = document.createElement('div');
+      info.className = 'spotlight-item-info';
+      info.innerHTML = `
+        <div class="spotlight-item-title">${_esc(item.title)}</div>
+        <div class="spotlight-item-sub">${_esc(item.subtitle || '')}</div>
+      `;
+
+      const badge = document.createElement('span');
+      badge.className = 'spotlight-item-badge';
+      badge.textContent = item.shortcut || '';
+
+      row.appendChild(leadingEl);
+      row.appendChild(info);
+      if (item.shortcut) row.appendChild(badge);
+
+      row.addEventListener('mouseenter', () => {
+        activeIndex = idx;
+        _updateSelection();
+      });
+
+      row.addEventListener('click', (e) => {
+        _executeItem(item, e.shiftKey || e.ctrlKey || e.metaKey);
+      });
+
+      spotlightList.appendChild(row);
+    });
+  };
+
+  const _updateSelection = () => {
+    const rows = spotlightList.querySelectorAll('.spotlight-item');
+    rows.forEach((r, idx) => {
+      r.classList.toggle('active', idx === activeIndex);
+      if (idx === activeIndex) {
+        r.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  };
+
+  const _executeItem = (item, modKey = false) => {
+    if (!item) return;
+    if (item.type === 'bookmark') {
+      if (modKey) {
+        chrome.tabs.create({ url: item.url, active: false });
+      } else {
+        closeSpotlight();
+        window.open(item.url, '_blank');
+      }
+    } else if (item.type === 'board') {
+      closeSpotlight();
+      const col = item.colEl;
+      if (!col) return;
+      if (modKey) {
+        const openBtn = col.querySelector('.board-open-all-btn');
+        if (openBtn) openBtn.click();
+      } else {
+        col.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        const nextZ = maxZIndex + 1;
+        setMaxZIndex(nextZ);
+        if (col.style.zIndex) col.style.zIndex = nextZ;
+        col.classList.add('spotlight-pulse-board');
+        setTimeout(() => col.classList.remove('spotlight-pulse-board'), 1500);
+      }
+    } else if (item.type === 'command') {
+      closeSpotlight();
+      if (item.run) item.run();
+    }
+  };
+
+  spotlightInput.addEventListener('input', renderSpotlightResults);
+
+  spotlightInput.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (currentItems.length) {
+        activeIndex = (activeIndex + 1) % currentItems.length;
+        _updateSelection();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (currentItems.length) {
+        activeIndex = (activeIndex - 1 + currentItems.length) % currentItems.length;
+        _updateSelection();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentItems[activeIndex]) {
+        _executeItem(currentItems[activeIndex], e.shiftKey || e.ctrlKey || e.metaKey);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSpotlight();
+    }
+  });
+
+  // Global Hotkeys
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+K or Cmd+K always toggles Spotlight
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (spotlightModal.classList.contains('hidden')) {
+        openSpotlight('');
+      } else {
+        closeSpotlight();
+      }
+      return;
+    }
+
+    // Escape closes open overlays
+    if (e.key === 'Escape') {
+      if (!spotlightModal.classList.contains('hidden')) {
+        closeSpotlight();
+        return;
+      }
+      if (actions.onEscapeAll) actions.onEscapeAll();
+      return;
+    }
+
+    // Ignore single-key shortcuts if typing inside an input/textarea/select
+    const tag = (e.target?.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) {
+      return;
+    }
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    // Don't fire single-key hotkeys if another modal is open
+    const anyModalOpen = [...document.querySelectorAll('.modal')].some(m => !m.classList.contains('hidden'));
+    if (anyModalOpen) return;
+
+    const k = e.key.toLowerCase();
+    if (e.key === '/') {
+      e.preventDefault();
+      openSpotlight('');
+    } else if (k === 'b') {
+      e.preventDefault();
+      if (actions.onNewBoard) actions.onNewBoard();
+    } else if (k === 's') {
+      e.preventDefault();
+      if (actions.onStashTabs) actions.onStashTabs();
+    } else if (k === 'n') {
+      e.preventDefault();
+      if (actions.onToggleNotes) actions.onToggleNotes();
+    } else if (k === 'p') {
+      e.preventDefault();
+      if (actions.onToggleBlur) actions.onToggleBlur();
+    } else if (k === 't') {
+      e.preventDefault();
+      if (actions.onTidyUp) actions.onTidyUp();
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// 6. CANVAS PAN (SPACE + DRAG OR MIDDLE-CLICK DRAG)
+// ─────────────────────────────────────────────
+export function initCanvasPan(workspace) {
+  if (!workspace) return;
+  let isSpaceDown = false;
+  let isPanning = false;
+  let startX = 0, startY = 0, scrollLeft = 0, scrollTop = 0;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      const tag = (e.target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) return;
+      if (!isSpaceDown) {
+        isSpaceDown = true;
+        workspace.classList.add('canvas-pan-ready');
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+      isSpaceDown = false;
+      isPanning = false;
+      workspace.classList.remove('canvas-pan-ready', 'canvas-panning');
+    }
+  });
+
+  workspace.addEventListener('pointerdown', (e) => {
+    // Allow middle-click (button 1) OR Space + Left-click (button 0)
+    if (e.button === 1 || (isSpaceDown && e.button === 0)) {
+      isPanning = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      scrollLeft = workspace.scrollLeft;
+      scrollTop = workspace.scrollTop;
+      workspace.classList.add('canvas-panning');
+      workspace.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { capture: true });
+
+  workspace.addEventListener('pointermove', (e) => {
+    if (!isPanning) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    workspace.scrollLeft = scrollLeft - dx;
+    workspace.scrollTop = scrollTop - dy;
+  });
+
+  const endPan = (e) => {
+    if (!isPanning) return;
+    isPanning = false;
+    workspace.classList.remove('canvas-panning');
+    try { workspace.releasePointerCapture(e.pointerId); } catch {}
+  };
+
+  workspace.addEventListener('pointerup', endPan);
+  workspace.addEventListener('pointercancel', endPan);
+}
+
 function _esc(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
 

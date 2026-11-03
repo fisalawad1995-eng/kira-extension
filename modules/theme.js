@@ -37,34 +37,48 @@ export async function applyPersistedTheme() {
 // ─────────────────────────────────────────────
 export async function applyMode(mode, persist = true) {
   document.body.dataset.theme = mode;
+  document.querySelectorAll('.style-toggle').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+
   if (mode === 'light') {
-    _setToken('--bg-body', '#f0ede8');
-    _setToken('--bg-column', 'rgba(255,255,255,0.65)');
-    _setToken('--bg-column-hover', 'rgba(255,255,255,0.85)');
-    _setToken('--text-primary', '#1a1a2e');
-    _setToken('--text-secondary', 'rgba(26,26,46,0.65)');
-    _setToken('--border-subtle', 'rgba(0,0,0,0.08)');
-    _setToken('--context-menu-bg', '#ffffff');
-    _setToken('--modal-bg', '#f5f3f7');
-    _setToken('--settings-bg', '#f0edf5');
-    _setToken('--input-bg', '#fff');
-    _setToken('--input-border', '#ccc');
-    _setToken('--btn-bg', 'rgba(200,190,210,0.7)');
-    _setToken('--overlay-gradient', 'radial-gradient(circle at 80% 50%, rgba(243,114,44,0.08) 0%, rgba(240,237,232,0.7) 80%)');
+    _setToken('--bg-body', '#f4f2ee');
+    _setToken('--bg-column', 'rgba(255, 255, 255, 0.86)');
+    _setToken('--bg-column-hover', 'rgba(255, 255, 255, 0.94)');
+    _setToken('--text-primary', '#18181b');
+    _setToken('--text-secondary', 'rgba(24, 24, 27, 0.65)');
+    _setToken('--border-subtle', 'rgba(0, 0, 0, 0.09)');
+    _setToken('--context-menu-bg', 'rgba(255, 255, 255, 0.96)');
+    _setToken('--modal-bg', '#ffffff');
+    _setToken('--settings-bg', 'rgba(248, 247, 252, 0.96)');
+    _setToken('--bg-panel', 'rgba(255, 255, 255, 0.92)');
+    _setToken('--input-bg', '#f4f3f8');
+    _setToken('--input-border', 'rgba(0, 0, 0, 0.15)');
+    _setToken('--btn-bg', 'rgba(255, 255, 255, 0.86)');
+    _setToken('--btn-hover-bg', 'rgba(255, 255, 255, 0.98)');
+    _setToken('--surface-hover', 'rgba(0, 0, 0, 0.06)');
+    _setToken('--surface-subtle', 'rgba(0, 0, 0, 0.04)');
+    _setToken('--column-shadow', '0 10px 30px rgba(0, 0, 0, 0.15)');
+    _setToken('--overlay-gradient', 'none');
   } else {
     _setToken('--bg-body', '#110e14');
-    _setToken('--bg-column', 'rgba(28,18,14,0.45)');
-    _setToken('--bg-column-hover', 'rgba(40,25,18,0.6)');
+    _setToken('--bg-column', 'rgba(28, 18, 14, 0.45)');
+    _setToken('--bg-column-hover', 'rgba(40, 25, 18, 0.6)');
     _setToken('--text-primary', '#ffffff');
-    _setToken('--text-secondary', 'rgba(255,255,255,0.65)');
-    _setToken('--border-subtle', 'rgba(255,255,255,0.07)');
+    _setToken('--text-secondary', 'rgba(255, 255, 255, 0.65)');
+    _setToken('--border-subtle', 'rgba(255, 255, 255, 0.07)');
     _setToken('--context-menu-bg', '#231b2b');
     _setToken('--modal-bg', '#1b1423');
     _setToken('--settings-bg', '#1c1524');
+    _setToken('--bg-panel', 'rgba(28, 21, 36, 0.9)');
     _setToken('--input-bg', '#110c16');
     _setToken('--input-border', '#48345c');
-    _setToken('--btn-bg', 'rgba(45,32,25,0.75)');
-    _setToken('--overlay-gradient', 'radial-gradient(circle at 80% 50%, rgba(243,114,44,0.15) 0%, rgba(0,0,0,0.55) 80%)');
+    _setToken('--btn-bg', 'rgba(45, 32, 25, 0.75)');
+    _setToken('--btn-hover-bg', 'rgba(90, 65, 50, 0.9)');
+    _setToken('--surface-hover', 'rgba(255, 255, 255, 0.07)');
+    _setToken('--surface-subtle', 'rgba(255, 255, 255, 0.04)');
+    _setToken('--column-shadow', '0 10px 30px rgba(0, 0, 0, 0.5)');
+    _setToken('--overlay-gradient', 'radial-gradient(circle at 80% 50%, rgba(243, 114, 44, 0.15) 0%, rgba(0, 0, 0, 0.55) 80%)');
   }
   if (persist) await DB.settings.set('theme_mode', mode);
 }
