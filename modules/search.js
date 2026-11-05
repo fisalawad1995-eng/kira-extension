@@ -43,7 +43,8 @@ export function buildSearchIndex(items) {
 export function search(query, opts = {}) {
   if (!query || !query.trim()) return [];
 
-  const q = query.trim().toLowerCase();
+  const q = query.trim().toLowerCase().replace(/(^|\s)#+(?=\S)/g, '$1');
+  if (!q) return [];
   const { scope = 'all', boardId = null, exact = false } = opts;
 
   const entries = scope === 'board' && boardId

@@ -69,10 +69,11 @@ function _dispatchQuickSave(tab) {
         url: chrome.runtime.getURL('popup/quick-save-picker.html') +
              '?title=' + encodeURIComponent(payload.tab.title) +
              '&url='   + encodeURIComponent(payload.tab.url) +
-             '&fav='   + encodeURIComponent(payload.tab.favIconUrl),
+             '&fav='   + encodeURIComponent(payload.tab.favIconUrl) +
+             (tab.id != null ? '&tabId=' + tab.id : ''),
         type: 'popup',
-        width: w,
-        height: h
+        width: w + 40,
+        height: h + 160
       });
     }
   });

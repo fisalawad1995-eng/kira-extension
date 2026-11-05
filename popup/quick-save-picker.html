@@ -9,63 +9,237 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      width: 360px;
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: #1b1423;
-      color: #fff;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    :root {
+      --accent: #8B5CF6;
+      --accent-glow: rgba(139, 92, 246, 0.2);
+      --bg: #1b1423;
+      --input-bg: #110c16;
+      --input-border: #48345c;
+      --text: #fff;
+      --text-2: rgba(255, 255, 255, 0.6);
+      --border: rgba(255, 255, 255, 0.07);
     }
 
+    body {
+      width: 380px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── Header (editable title) ── */
     .qs-header {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding-bottom: 13px;
+      border-bottom: 1px solid var(--border);
     }
-    .qs-favicon { width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
-    .qs-tab-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
-    .qs-tab-url { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; word-break: break-all; }
+    .qs-favicon { width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; margin-top: 6px; }
+    .qs-header-info { flex: 1; min-width: 0; }
+    .qs-title-box {
+      display: flex;
+      align-items: center;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 7px;
+      padding-right: 8px;
+      margin-bottom: 5px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .qs-title-box:hover { border-color: rgba(255, 255, 255, 0.2); }
+    .qs-title-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .qs-title-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 6px 8px;
+      outline: none;
+    }
+    .qs-rename-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #c4b5fd;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      padding: 2px 6px;
+      border-radius: 5px;
+      user-select: none;
+      pointer-events: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .qs-tab-url {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-left: 2px;
+    }
 
-    label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px; }
+    /* ── Fields ── */
+    .field-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    label, .field-label { font-size: 12px; font-weight: 600; color: var(--text-2); display: block; }
+    .field-head label { margin: 0; }
+    .suggest-chip {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #c4b5fd;
+      background: rgba(139, 92, 246, 0.14);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      padding: 2px 8px;
+      border-radius: 999px;
+      max-width: 210px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-    select {
+    select, .text-input, textarea {
       width: 100%;
       padding: 10px 12px;
       border-radius: 8px;
-      border: 1px solid #48345c;
-      background: #110c16 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center;
-      background-size: 16px;
-      color: #fff;
+      border: 1px solid var(--input-border);
+      background-color: var(--input-bg);
+      color: var(--text);
       font-family: inherit;
       font-size: 13px;
       outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select {
+      background: var(--input-bg) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center;
+      background-size: 16px;
       appearance: none;
       -webkit-appearance: none;
       cursor: pointer;
+      padding-right: 34px;
     }
-    select:focus { border-color: #8B5CF6; box-shadow: 0 0 0 2px rgba(139,92,246,0.2); }
+    select option.opt-new { color: #c4b5fd; font-weight: 600; }
+    select:focus, .text-input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+    textarea { resize: none; min-height: 54px; line-height: 1.45; }
+    .text-input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.35); }
 
+    /* Inline create row */
+    .inline-create {
+      display: flex;
+      gap: 6px;
+      margin-top: 7px;
+      animation: fadeIn 0.14s ease;
+    }
+    .inline-create .text-input { padding: 8px 10px; font-size: 12.5px; }
+    .mini-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 0 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mini-btn.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+    }
+    .mini-btn:hover { filter: brightness(1.12); }
+
+    /* Details (note + tags) */
+    .details-toggle {
+      background: none;
+      border: none;
+      color: var(--text-2);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      width: fit-content;
+    }
+    .details-toggle:hover { color: var(--text); }
+    .details-toggle .chev { transition: transform 0.15s; display: inline-block; }
+    .details-toggle.open .chev { transform: rotate(90deg); }
+    .details-pane { display: flex; flex-direction: column; gap: 8px; animation: fadeIn 0.14s ease; }
+    .tag-preview { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag-pill {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #c4b5fd;
+      background: rgba(139, 92, 246, 0.16);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    /* Duplicate warning */
     .dupe-warning {
-      background: rgba(255,193,7,0.1);
+      background: rgba(255,193,7,0.08);
       border: 1px solid rgba(255,193,7,0.3);
-      border-radius: 6px;
-      padding: 9px 12px;
+      border-radius: 8px;
+      padding: 9px 11px;
       font-size: 12px;
       color: #ffc107;
-      display: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
     }
-    .dupe-warning.show { display: block; }
+    .dupe-locations { color: rgba(255, 220, 130, 0.95); line-height: 1.45; }
+    .dupe-locations strong { color: #ffd54f; }
+    .dupe-actions { display: flex; gap: 6px; }
+    .dupe-btn {
+      background: rgba(255,193,7,0.12);
+      border: 1px solid rgba(255,193,7,0.35);
+      color: #ffd54f;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .dupe-btn:hover { background: rgba(255,193,7,0.22); }
 
+    /* Toggles */
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-2);
+      cursor: pointer;
+      user-select: none;
+    }
+    .check-row input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+    /* Actions */
     .actions { display: flex; gap: 10px; }
-
     .btn-save {
       flex: 1;
-      background: #7c4d8b;
+      background: var(--accent);
       border: none;
       color: #fff;
       padding: 10px;
@@ -74,10 +248,21 @@
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: filter 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .btn-save:hover { background: #8b5aa0; }
-
+    .btn-save:hover { filter: brightness(1.12); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .kbd {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.18);
+    }
     .btn-cancel {
       background: transparent;
       border: 1px solid rgba(255,107,107,0.3);
@@ -92,69 +277,174 @@
     }
     .btn-cancel:hover { background: rgba(255,107,107,0.1); }
 
-    .btn-stash-all {
-      width: 100%;
-      background: rgba(139, 92, 246, 0.14);
+    /* Stash */
+    .stash-box {
       border: 1px dashed rgba(139, 92, 246, 0.45);
-      color: #c4b5fd;
-      padding: 9px 12px;
+      background: rgba(139, 92, 246, 0.08);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .stash-row { display: flex; gap: 6px; }
+    .stash-row select { padding: 7px 30px 7px 10px; font-size: 12px; flex: 1; background-position: right 9px center; }
+    .btn-stash-all {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      color: #ddd6fe;
+      padding: 7px 12px;
       border-radius: 8px;
       font-family: inherit;
       font-weight: 600;
       font-size: 12px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-stash-all:hover { background: var(--accent); color: #fff; }
+
+    .shortcut-hint {
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Success */
+    .saved-msg {
+      text-align: center;
+      padding: 18px 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      animation: fadeIn 0.18s ease;
+    }
+    .saved-check {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      font-size: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      animation: pop 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
     }
-    .btn-stash-all:hover {
-      background: rgba(139, 92, 246, 0.25);
-      border-color: #8B5CF6;
-      color: #fff;
+    .saved-title { font-size: 15px; font-weight: 700; }
+    .saved-sub { font-size: 12px; color: var(--text-2); }
+    .saved-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .undo-btn {
+      background: transparent;
+      border: 1px solid var(--input-border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
     }
+    .undo-btn:hover { border-color: var(--accent); background: rgba(139,92,246,0.12); }
+    .countdown-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .countdown-fill { height: 100%; background: var(--accent); width: 100%; }
 
-    .saved-msg {
-      text-align: center;
-      padding: 20px;
-      font-size: 15px;
-      color: rgba(255,255,255,0.8);
-      display: none;
-    }
-    .saved-msg span { font-size: 28px; display: block; margin-bottom: 8px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+    @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
-  <div class="qs-header">
-    <img class="qs-favicon" id="favicon" src="" alt="">
-    <div>
-      <div class="qs-tab-title" id="tab-title">Loading…</div>
-      <div class="qs-tab-url" id="tab-url"></div>
+  <div id="main-view" style="display:flex;flex-direction:column;gap:13px;">
+    <div class="qs-header">
+      <img class="qs-favicon" id="favicon" src="" alt="">
+      <div class="qs-header-info">
+        <div class="qs-title-box">
+          <input class="qs-title-input" id="tab-title" value="Loading…" placeholder="Bookmark title…" title="Click to rename" spellcheck="false">
+          <span class="qs-rename-badge" title="Rename this bookmark">✎ Rename</span>
+        </div>
+        <div class="qs-tab-url" id="tab-url"></div>
+      </div>
     </div>
+
+    <div>
+      <div class="field-head">
+        <label for="board-select">Save to Board</label>
+        <span class="suggest-chip hidden" id="suggest-chip"></span>
+      </div>
+      <select id="board-select"></select>
+      <div class="inline-create hidden" id="new-board-row">
+        <input class="text-input" id="new-board-input" placeholder="New board name…" maxlength="60">
+        <button class="mini-btn" id="new-board-ok">Create</button>
+        <button class="mini-btn ghost" id="new-board-cancel">✕</button>
+      </div>
+    </div>
+
+    <div>
+      <label for="page-select" style="margin-bottom:6px;">Page</label>
+      <select id="page-select"></select>
+      <div class="inline-create hidden" id="new-page-row">
+        <input class="text-input" id="new-page-input" placeholder="New page name…" maxlength="40">
+        <button class="mini-btn" id="new-page-ok">Create</button>
+        <button class="mini-btn ghost" id="new-page-cancel">✕</button>
+      </div>
+    </div>
+
+    <button class="details-toggle" id="details-toggle"><span class="chev">›</span> Add note &amp; tags</button>
+    <div class="details-pane hidden" id="details-pane">
+      <textarea id="note-input" placeholder="Note (optional)…" maxlength="500"></textarea>
+      <input class="text-input" id="tags-input" placeholder="#work #docs  or  work, docs" maxlength="120">
+      <div class="tag-preview" id="tag-preview"></div>
+    </div>
+
+    <div class="dupe-warning hidden" id="dupe-warning">
+      <div class="dupe-locations" id="dupe-locations"></div>
+      <div class="dupe-actions">
+        <button class="dupe-btn" id="dupe-open">Open Board Tab</button>
+        <button class="dupe-btn" id="dupe-move">Move here</button>
+      </div>
+    </div>
+
+    <label class="check-row"><input type="checkbox" id="close-tab-check"> Close this tab after saving</label>
+
+    <div class="actions">
+      <button class="btn-save" id="btn-save">Save <span class="kbd">Enter</span></button>
+      <button class="btn-cancel" id="btn-cancel">Cancel</button>
+    </div>
+
+    <div class="stash-box">
+      <div class="stash-row">
+        <select id="stash-scope" title="Which tabs to stash">
+          <option value="window">All tabs in this window</option>
+          <option value="right">Tabs to the right</option>
+          <option value="selected">Selected (highlighted) tabs</option>
+          <option value="all">All windows</option>
+        </select>
+        <button class="btn-stash-all" id="btn-stash-all-popup">⚡ Stash</button>
+      </div>
+      <label class="check-row"><input type="checkbox" id="stash-close-check"> Close stashed tabs</label>
+    </div>
+
+    <div class="shortcut-hint">Enter save · Esc cancel · Alt+↑/↓ board · Alt+Shift+S open</div>
   </div>
 
-  <div>
-    <label>Save to Board</label>
-    <select id="board-select"></select>
-  </div>
-
-  <div>
-    <label>Page</label>
-    <select id="page-select"></select>
-  </div>
-
-  <div class="dupe-warning" id="dupe-warning">⚠ Already saved in this page — save anyway?</div>
-
-  <div class="actions">
-    <button class="btn-save" id="btn-save">Save</button>
-    <button class="btn-cancel" id="btn-cancel">Cancel</button>
-  </div>
-
-  <button class="btn-stash-all" id="btn-stash-all-popup">⚡ Stash All Open Tabs into New Board</button>
-
-  <div class="saved-msg" id="saved-msg">
-    <span>✓</span>Saved!
+  <div class="saved-msg hidden" id="saved-msg">
+    <div class="saved-check">✓</div>
+    <div class="saved-title" id="saved-title">Saved!</div>
+    <div class="saved-sub" id="saved-sub"></div>
+    <div class="saved-actions">
+      <button class="undo-btn" id="undo-btn">↶ Undo</button>
+      <button class="undo-btn" id="done-btn">Done</button>
+    </div>
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
   </div>
 
   <script type="module" src="popup.js"></script>

@@ -266,6 +266,7 @@ async function renderAll() {
       onDelete: () => _deleteFolder(folder.id, folder.title),
       onRefresh: renderAll,
       onReorder: renderAll,
+      onRenamed: _refreshSearchIndex,
       accentColor: folderAccents[folder.id] || null,
       onSelectAccent: async (hex) => {
         const current = (await DB.settings.get('folder_accents')) || {};
@@ -290,7 +291,8 @@ async function renderAll() {
       onAddPage: _addPage,
       onImportJson: () => importJsonInput.click(),
       onRefresh: renderAll,
-      onReorder: renderAll
+      onReorder: renderAll,
+      onRenamed: _refreshSearchIndex
     });
     allColumns.push({ id: board.id, el });
   }

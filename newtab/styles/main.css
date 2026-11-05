@@ -651,6 +651,29 @@ body.zen-mode .search-results-panel {
   flex: 1;
 }
 
+.bookmark-rename-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--color-accent);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-glow);
+}
+
+.bookmark-item.renaming {
+  background: rgba(255, 255, 255, 0.06);
+  cursor: default;
+}
+
+.bookmark-item.renaming .item-actions {
+  display: none !important;
+}
+
 .item-actions {
   display: none;
   gap: 2px;
@@ -675,6 +698,11 @@ body.zen-mode .search-results-panel {
 .item-action-btn:hover {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.item-action-btn.rename:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-glow);
 }
 
 .item-action-btn.delete:hover {

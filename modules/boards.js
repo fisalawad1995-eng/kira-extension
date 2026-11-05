@@ -175,7 +175,14 @@ export function buildFolderColumn(title, folderId, items, handlers) {
     itemType: 'folder', itemId: item.id, folderId,
     onDelete: () => {
       if (confirm('Remove?')) chrome.bookmarks.remove(item.id, handlers.onRefresh);
-    }
+    },
+    onRename: (newTitle) => new Promise(resolve => {
+      chrome.bookmarks.update(item.id, { title: newTitle }, () => {
+        item.title = newTitle;
+        if (handlers.onRenamed) handlers.onRenamed();
+        resolve();
+      });
+    })
   })));
 
   if (items.length === 0) list.appendChild(_buildEmptyState('No bookmarks yet'));
@@ -268,6 +275,15 @@ export function buildBoardColumn(board, pages, bookmarksByPage, handlers) {
       onDelete: async () => {
         await DB.bookmarks.softDelete(item.id);
         handlers.onRefresh();
+      },
+      onRename: async (newTitle) => {
+        const bk = await DB.bookmarks.get(item.id);
+        if (!bk) return;
+        bk.title = newTitle;
+        bk.updated_at = Date.now();
+        await DB.bookmarks.save(bk);
+        item.title = newTitle;
+        if (handlers.onRenamed) handlers.onRenamed();
       }
     })));
 
@@ -321,16 +337,78 @@ export function buildBookmarkRow(title, url, opts) {
   const titleSpan = document.createElement('span');
   titleSpan.className = 'bookmark-title';
   titleSpan.textContent = title || url;
+  titleSpan.title = title || url;
 
   link.appendChild(faviconImg);
   link.appendChild(titleSpan);
 
   const actions = document.createElement('div');
   actions.className = 'item-actions';
-  actions.innerHTML = `<button class="item-action-btn delete" title="Move to Trash">✖</button>`;
+  actions.innerHTML = `${opts.onRename ? '<button class="item-action-btn rename" title="Rename">✎</button>' : ''}<button class="item-action-btn delete" title="Move to Trash">✖</button>`;
   actions.querySelector('.delete').addEventListener('click', (e) => {
     e.preventDefault();
     opts.onDelete();
+  });
+
+  // Inline rename — works for any saved site (custom boards & Chrome folders)
+  const startRename = () => {
+    if (!opts.onRename || wrapper.classList.contains('renaming')) return;
+    wrapper.classList.add('renaming');
+    wrapper.draggable = false;
+
+    const input = document.createElement('input');
+    input.className = 'bookmark-rename-input';
+    input.value = title || '';
+    input.placeholder = url;
+    input.spellcheck = false;
+    titleSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+    const finish = async (commit) => {
+      if (done) return;
+      done = true;
+      const newTitle = input.value.trim() || url;
+      input.replaceWith(titleSpan);
+      wrapper.classList.remove('renaming');
+      wrapper.draggable = true;
+      if (!commit || newTitle === title) return;
+      title = newTitle;
+      titleSpan.textContent = newTitle;
+      titleSpan.title = newTitle;
+      try { await opts.onRename(newTitle); } catch (err) { console.warn('Rename failed', err); }
+    };
+
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation(); // keep global hotkeys (B, S, N…) from firing
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(true));
+    input.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+    input.addEventListener('mousedown', (e) => e.stopPropagation());
+  };
+
+  const renameBtn = actions.querySelector('.rename');
+  if (renameBtn) {
+    renameBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startRename();
+    });
+  }
+
+  // Double click to rename directly
+  titleSpan.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startRename();
+  });
+
+  // Block navigation while editing
+  link.addEventListener('click', (e) => {
+    if (wrapper.classList.contains('renaming')) e.preventDefault();
   });
 
   wrapper.appendChild(link);
@@ -338,7 +416,7 @@ export function buildBookmarkRow(title, url, opts) {
 
   wrapper.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    _showBookmarkRowMenu(e, { title, url, opts });
+    _showBookmarkRowMenu(e, { title, url, opts, onRename: opts.onRename ? startRename : null });
   });
 
   wrapper.addEventListener('dragstart', (e) => {
@@ -865,12 +943,22 @@ function _showPageTabMenu(e, page, boardId, handlers) {
   setTimeout(() => document.addEventListener('click', _closeAnyOpenMenu, { once: true }), 0);
 }
 
-function _showBookmarkRowMenu(e, { title, url, opts }) {
+function _showBookmarkRowMenu(e, { title, url, opts, onRename }) {
   _closeAnyOpenMenu();
   const menu = document.createElement('div');
   menu.className = 'context-menu';
   menu.style.top = `${e.clientY}px`;
   menu.style.left = `${e.clientX}px`;
+
+  if (onRename) {
+    const renameBtn = document.createElement('button');
+    renameBtn.innerHTML = _iconEdit + ' Rename';
+    renameBtn.addEventListener('click', () => {
+      _closeAnyOpenMenu();
+      onRename();
+    });
+    menu.appendChild(renameBtn);
+  }
 
   const copyBtn = document.createElement('button');
   copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy Link`;
